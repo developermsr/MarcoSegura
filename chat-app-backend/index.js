@@ -2,13 +2,9 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const http = require('http');
-const socketIo = require('socket.io');
 
 const app = express();
 const port = process.env.PORT || 5000;
-const server = http.createServer(app);
-const io = socketIo(server);
 
 // Middlewares
 app.use(cors());
@@ -35,51 +31,22 @@ const MessageSchema = new mongoose.Schema({
 // Create a model from the schema
 const Message = mongoose.model('Message', MessageSchema);
 
-// Socket.io handling
-io.on('connection', (socket) => {
-  console.log('Usuario conectado');
-
-  socket.on('sendMessage', async (message) => {
-    try {
-      const newMessage = new Message({
-        username: message.username,
-        content: message.content,
-      });
-
-      // Guarda el mensaje en la base de datos
-      await newMessage.save();
-
-      // Emite el mensaje a todos los clientes conectados
-      io.emit('newMessage', newMessage);
-    } catch (error) {
-      console.error('Error al guardar el mensaje:', error);
-    }
-  });
-
-  socket.on('disconnect', () => {
-    console.log('Usuario desconectado');
-  });
-});
+app.use(express.json());
 
 // Unified POST endpoint for messages
 app.post('/api/messages', async (req, res) => {
   try {
-    const message = new Message({
+    let message = new Message({
       username: req.body.username,
-      content: req.body.content,
+      content: req.body.content // Asegúrate de que esto coincida con tu esquema y la petición del cliente.
     });
-
-    // Guarda el mensaje en la base de datos
-    await message.save();
-
-    // Emite el mensaje a todos los clientes conectados
-    io.emit('newMessage', message);
-
+    message = await message.save();
     res.status(201).json(message);
   } catch (error) {
     res.status(400).send(error);
   }
 });
+
 
 app.get('/api/messages', async (req, res) => {
   try {
@@ -91,6 +58,6 @@ app.get('/api/messages', async (req, res) => {
 });
 
 // Start the server
-server.listen(port, () => {
+app.listen(port, () => {
   console.log(`Server is running on port: ${port}`);
 });
