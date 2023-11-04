@@ -48,14 +48,17 @@ app.post('/api/messages', async (req, res) => {
 });
 
 
-app.get('/api/messages', async (req, res) => {
+// Modifica tu ruta para obtener mensajes nuevos
+app.get('/api/new-messages/:timestamp', async (req, res) => {
   try {
-    const messages = await Message.find().sort({ createdAt: 'asc' }); // Ordenados por fecha de creación
-    res.json(messages);
+    const timestamp = new Date(req.params.timestamp);
+    const newMessages = await Message.find({ createdAt: { $gt: timestamp } }).sort({ createdAt: 'asc' });
+    res.json(newMessages);
   } catch (error) {
     res.status(500).send(error);
   }
 });
+
 
 // Start the server
 app.listen(port, () => {
