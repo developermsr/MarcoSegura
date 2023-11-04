@@ -90,10 +90,10 @@ const ChatBox = ({ messages, setMessages, sendMessage }) => {
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
             className="message-input"
-            placeholder="Escribe un mensaje..."
+            placeholder="Escribe un mensaje"
           />
           <button onClick={handleSendMessage} className="send-button">
-            Enviara
+            Enviar
           </button>
         </div>
       </div>
