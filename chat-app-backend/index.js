@@ -4,12 +4,11 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 
 const app = express();
-const port = process.env.PORT || 5000;
-
-// Middlewares
+const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
+app.use(express.json());
 
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const uri = "mongodb+srv://antoniosegurarojas:MpjrtVyscT6KD1Pa@cluster0.dfe5x83.mongodb.net/?retryWrites=true&w=majority";
@@ -23,57 +22,59 @@ const client = new MongoClient(uri, {
 });
 async function run() {
   try {
-    // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
-    // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
-  } finally {
-    // Ensures that the client will close when you finish/error
-    await client.close();
+    console.log("Successfully connected to MongoDB!");
+    const db = client.db('Cluster0'); // Replace <dbname> with your actual database name.
+    const chatCollection = db.collection('chat');
+
+    app.post('/api/messages', async (req, res) => {
+      try {
+        // Construct a new message object with the current date and time
+        const newMessage = {
+          username: req.body.username,
+          content: req.body.content,
+          createdAt: new Date()
+        };
+
+        // Insert the new message into the database
+        const result = await chatCollection.insertOne(newMessage);
+
+        // Respond with the inserted document (including the MongoDB-generated ID)
+        res.status(201).json(result.ops[0]);
+      } catch (error) {
+        console.error("Error during MongoDB insert operation", error);
+        res.status(400).send(error.message);
+      }
+    });
+
+    app.get('/api/messages', async (req, res) => {
+      try {
+        // Connect to the database if not already connected
+        await client.connect();
+        // Access the database and collection
+        const db = client.db('Cluster0'); // Replace <dbname> with your actual database name.
+        const chatCollection = db.collection('chat');
+    
+        // Fetch and sort the messages from the collection
+        const messages = await chatCollection.find().sort({ createdAt: 1 }).toArray(); // `1` for ascending order
+    
+        res.json(messages);
+      } catch (error) {
+        console.error("Error fetching messages", error);
+        res.status(500).send(error.message);
+      }
+    });
+    
+
+
+   app.listen(port, () => {
+      console.log(`Server is running on port ${port}`);
+    });
+
+  } catch (e) {
+    console.error("Error during MongoDB client initialization", e);
   }
 }
+
 run().catch(console.dir);
 
-
-
-// Define a schema for chat messages
-const MessageSchema = new mongoose.Schema({
-  username: { type: String, required: true },
-  content: { type: String, required: true },
-  createdAt: { type: Date, default: Date.now },
-});
-
-// Create a model from the schema
-const Message = mongoose.model('Message', MessageSchema);
-
-app.use(express.json());
-
-// Unified POST endpoint for messages
-app.post('/api/messages', async (req, res) => {
-  try {
-    let message = new Message({
-      username: req.body.username,
-      content: req.body.content // Asegúrate de que esto coincida con tu esquema y la petición del cliente.
-    });
-    message = await message.save();
-    res.status(201).json(message);
-  } catch (error) {
-    res.status(400).send(error);
-  }
-});
-
-
-app.get('/api/messages', async (req, res) => {
-  try {
-    const messages = await Message.find().sort({ createdAt: 'asc' }); // Ordenados por fecha de creación
-    res.json(messages);
-  } catch (error) {
-    res.status(500).send(error);
-  }
-});
-
-// Start the server
-app.listen(port, () => {
-  console.log(`Server is running on port: ${port}`);
-});
