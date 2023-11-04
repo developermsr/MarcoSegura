@@ -1,15 +1,15 @@
-// ChatBox.js
 import React, { useState, useEffect } from 'react';
-import MessageList from './MessageList'; // Asumiendo que tienes este componente
-import './ChatBox.css'; // Asume que tienes un archivo CSS para estilizar tu ChatBox
+import MessageList from './MessageList';
+import './ChatBox.css';
 import axios from 'axios';
 
 const ChatBox = ({ messages, setMessages, sendMessage }) => {
   const [newMessage, setNewMessage] = useState('');
- 
+  const [lastPollTime, setLastPollTime] = useState(new Date(0));
+
   const handleSendMessage = () => {
     if (newMessage.trim()) {
-      sendMessage(newMessage); // Usa directamente la función que se pasó como prop.
+      sendMessage(newMessage);
       setNewMessage('');
     }
   };
@@ -23,14 +23,59 @@ const ChatBox = ({ messages, setMessages, sendMessage }) => {
       handleSendMessage();
     }
   };
+
+
   useEffect(() => {
-    axios.get('https://marco-segura.vercel.app/api/messages')
-      .then(response => {
-        setMessages(response.data);
-      })
-      .catch(error => console.error('Error fetching messages:', error));
-  }, [setMessages]); // Pasa setMessages para asegurarte de que no cambie y no provoque bucles infinitos.
+    const fetchNewMessages = async () => {
+      try {
+        const response = await axios.get(`https://marco-segura-8qpb.vercel.app/api/new-messages/${lastPollTime.toISOString()}`);
+        const newMessages = response.data;
+        if (newMessages.length > 0) {
+          setMessages((prevMessages) => [...prevMessages, ...newMessages]);
+          setLastPollTime(new Date());
+        }
+      } catch (error) {
+        console.error('Error fetching new messages:', error);
+      }
+    };
+    fetchNewMessages();
+    const pollingInterval = setInterval(fetchNewMessages, 1000); // Puedes ajustar el intervalo según tus necesidades.
+    return () => {
+      clearInterval(pollingInterval);
+    };
+  }, [setMessages, lastPollTime, messages]);
+
+  useEffect(() => {
+    let watermark = lastPollTime; // Inicialmente, la marca de agua es el último tiempo de sondeo.
   
+    const fetchNewMessages = async () => {
+      try {
+        const response = await axios.get(`https://marco-segura-8qpb.vercel.app/api/new-messages/${watermark.toISOString()}`);
+        const fetchedMessages = response.data;
+  
+        // Suponiendo que los mensajes están ordenados por tiempo ascendente
+        if (fetchedMessages.length) {
+          // El nuevo tiempo de marca de agua será el tiempo del último mensaje recibido
+          watermark = new Date(fetchedMessages[fetchedMessages.length - 1].timestamp);
+        }
+  
+        setMessages((prevMessages) => {
+          // Simplemente concatena los nuevos mensajes ya que se asume que no hay duplicados
+          return [...prevMessages, ...fetchedMessages];
+        });
+  
+        // No necesitamos actualizar el estado de lastPollTime aquí
+        // ya que usamos una variable `watermark` local para la lógica.
+      } catch (error) {
+        console.error('Error fetching new messages:', error);
+      }
+    };
+  
+    const pollingInterval = setInterval(fetchNewMessages, 1000);
+    return () => clearInterval(pollingInterval);
+  }, [setMessages]); // 'lastPollTime' ya no es una dependencia.
+  
+
 
   return (
     <div className="container-padre">
@@ -56,4 +101,4 @@ const ChatBox = ({ messages, setMessages, sendMessage }) => {
   );
 };
 
-export default ChatBox;
+export default ChatBox; 
