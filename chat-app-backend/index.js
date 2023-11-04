@@ -6,6 +6,13 @@ const app = express();
 const port = process.env.PORT || 5000;
 const server = require('http').createServer(app);
 const io = require('socket.io')(server);
+
+
+
+
+
+
+
 // Middlewares
 app.use(cors());
 app.use(bodyParser.json());
@@ -35,12 +42,21 @@ app.use(express.json());
 
 
 io.on('connection', (socket) => {
-  console.log('Cliente conectado');
+  console.log('Usuario conectado');
+
+  // Cuando un usuario envía un mensaje
+  socket.on('sendMessage', (message) => {
+    // Guarda el mensaje en tu base de datos o donde lo estés almacenando
+
+    // Emite el mensaje a todos los usuarios conectados
+    io.emit('newMessage', message);
+  });
 
   socket.on('disconnect', () => {
-    console.log('Cliente desconectado');
+    console.log('Usuario desconectado');
   });
 });
+
 // Unified POST endpoint for messages
 app.post('/api/messages', async (req, res) => {
   try {
