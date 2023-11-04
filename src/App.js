@@ -32,7 +32,7 @@ const App = () => {
       username: username,
       content: newMessageContent,
     };
-    const API_BASE_URL = 'https://marco-segura.vercel.app/api';
+    const API_BASE_URL = 'https://marco-segura-8qpb.vercel.app/api';
 
     fetch(`${API_BASE_URL}/messages`, {
       method: 'POST',
