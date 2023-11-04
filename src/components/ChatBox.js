@@ -24,7 +24,7 @@ const ChatBox = ({ messages, setMessages, sendMessage }) => {
     }
   };
   useEffect(() => {
-    axios.get('http://127.0.0.1:5000/api/messages')
+    axios.get('https://marco-segura.vercel.app/api/messages')
       .then(response => {
         setMessages(response.data);
       })
