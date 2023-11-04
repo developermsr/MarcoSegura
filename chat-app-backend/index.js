@@ -2,16 +2,13 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const http = require('http');
+const socketIo = require('socket.io');
+
 const app = express();
 const port = process.env.PORT || 5000;
-const server = require('http').createServer(app);
-const io = require('socket.io')(server);
-
-
-
-
-
-
+const server = http.createServer(app);
+const io = socketIo(server);
 
 // Middlewares
 app.use(cors());
@@ -38,18 +35,25 @@ const MessageSchema = new mongoose.Schema({
 // Create a model from the schema
 const Message = mongoose.model('Message', MessageSchema);
 
-app.use(express.json());
-
-
+// Socket.io handling
 io.on('connection', (socket) => {
   console.log('Usuario conectado');
 
-  // Cuando un usuario envía un mensaje
-  socket.on('sendMessage', (message) => {
-    // Guarda el mensaje en tu base de datos o donde lo estés almacenando
+  socket.on('sendMessage', async (message) => {
+    try {
+      const newMessage = new Message({
+        username: message.username,
+        content: message.content,
+      });
 
-    // Emite el mensaje a todos los usuarios conectados
-    io.emit('newMessage', message);
+      // Guarda el mensaje en la base de datos
+      await newMessage.save();
+
+      // Emite el mensaje a todos los clientes conectados
+      io.emit('newMessage', newMessage);
+    } catch (error) {
+      console.error('Error al guardar el mensaje:', error);
+    }
   });
 
   socket.on('disconnect', () => {
@@ -69,7 +73,7 @@ app.post('/api/messages', async (req, res) => {
     await message.save();
 
     // Emite el mensaje a todos los clientes conectados
-    io.emit('message', message);
+    io.emit('newMessage', message);
 
     res.status(201).json(message);
   } catch (error) {
@@ -87,6 +91,6 @@ app.get('/api/messages', async (req, res) => {
 });
 
 // Start the server
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`Server is running on port: ${port}`);
 });
