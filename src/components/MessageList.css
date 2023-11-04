@@ -1,0 +1,38 @@
+/* MessageList.css */
+.message-list {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .message {
+    display: flex;
+    padding:15px !important;
+    align-items: start;
+    text-align: left; /* Ensures text is left-aligned */
+    flex-direction: column;
+  }
+  
+  .message.current-user {
+    justify-content: flex-start; /* Aligns the current user's messages to the right */
+    text-align: right;
+  }
+  
+  .message.other-user {
+    justify-content: flex-start; /* Aligns other users' messages to the left */
+    text-align: left;
+  }
+  
+  .message-username {
+    font-weight: bold !important;
+    margin-right: 8px; /* Añade un poco de espacio entre el nombre de usuario y el mensaje */
+  }
+  
+  .message-content {
+    margin-top: 8px; /* Añade un poco de espacio entre el nombre de usuario y el mensaje */
+  }
+  
+
+  .message:not(.current-user) {
+    justify-content: flex-start; /* Alinea los mensajes de otros usuarios a la izquierda */
+  }
+  
