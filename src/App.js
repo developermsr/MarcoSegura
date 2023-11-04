@@ -3,19 +3,19 @@ import React, { useState } from 'react';
 import ChatBox from './components/ChatBox'; // Asegúrate de que la ruta al componente es correcta.
 import './App.css'; // Asegúrate de que la ruta a tu archivo CSS es correcta.
 import Cookies from 'js-cookie';
-
+function generateUUID() {
+  return 'xxxx-4xxx-yxxx-xxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
 const App = () => {
   const [messages, setMessages] = useState([]);
   const getUsernameFromCookie = () => {
     let username = Cookies.get('username');
     if (!username) {
-      // Encuentra el último usuario (UsuarioN) guardado en una cookie y luego suma 1
-      let lastUserNumber = parseInt(Cookies.get('last_user_number'), 10) || 0;
-      let newUserNumber = lastUserNumber + 1;
-      username = 'Usuario' + newUserNumber;
-      // Establece el nuevo usuario y actualiza el último número de usuario en las cookies
-      Cookies.set('username', username, { expires: 365 }); // Guarda por un año
-      Cookies.set('last_user_number', newUserNumber, { expires: 365 }); // Guarda por un año
+      username = 'Usuario-' + generateUUID();
+      Cookies.set('username', username, { expires: 365 });
     }
     return username;
   };

@@ -3,10 +3,15 @@ import React, { useState, useEffect } from 'react';
 import MessageList from './MessageList'; // Asumiendo que tienes este componente
 import './ChatBox.css'; // Asume que tienes un archivo CSS para estilizar tu ChatBox
 import axios from 'axios';
+import io from 'socket.io-client';
 
 const ChatBox = ({ messages, setMessages, sendMessage }) => {
   const [newMessage, setNewMessage] = useState('');
+  const socket = io('https://marco-segura.vercel.app/api/message'); // Reemplaza con la URL de tu servidor WebSocket
+
+  // Maneja la recepción de nuevos mensajes desde el servidor WebSocket
  
+
   const handleSendMessage = () => {
     if (newMessage.trim()) {
       sendMessage(newMessage); // Usa directamente la función que se pasó como prop.
@@ -24,12 +29,19 @@ const ChatBox = ({ messages, setMessages, sendMessage }) => {
     }
   };
   useEffect(() => {
+    socket.on('message', (newMessage) => {
+      setMessages((prevMessages) => [...prevMessages, newMessage]);
+    });
+
+    return () => {
+      socket.disconnect();
+    },
     axios.get('https://marco-segura.vercel.app/api/messages')
       .then(response => {
         setMessages(response.data);
       })
       .catch(error => console.error('Error fetching messages:', error));
-  }, [setMessages]); // Pasa setMessages para asegurarte de que no cambie y no provoque bucles infinitos.
+  }, [setMessages,socket]); // Pasa setMessages para asegurarte de que no cambie y no provoque bucles infinitos.
   
 
   return (
@@ -48,7 +60,7 @@ const ChatBox = ({ messages, setMessages, sendMessage }) => {
             placeholder="Escribe un mensaje..."
           />
           <button onClick={handleSendMessage} className="send-button">
-            Enviar
+            Enviara
           </button>
         </div>
       </div>

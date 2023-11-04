@@ -2,10 +2,10 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-
 const app = express();
 const port = process.env.PORT || 5000;
-
+const server = require('http').createServer(app);
+const io = require('socket.io')(server);
 // Middlewares
 app.use(cors());
 app.use(bodyParser.json());
@@ -33,20 +33,33 @@ const Message = mongoose.model('Message', MessageSchema);
 
 app.use(express.json());
 
+
+io.on('connection', (socket) => {
+  console.log('Cliente conectado');
+
+  socket.on('disconnect', () => {
+    console.log('Cliente desconectado');
+  });
+});
 // Unified POST endpoint for messages
 app.post('/api/messages', async (req, res) => {
   try {
-    let message = new Message({
+    const message = new Message({
       username: req.body.username,
-      content: req.body.content // Asegúrate de que esto coincida con tu esquema y la petición del cliente.
+      content: req.body.content,
     });
-    message = await message.save();
+
+    // Guarda el mensaje en la base de datos
+    await message.save();
+
+    // Emite el mensaje a todos los clientes conectados
+    io.emit('message', message);
+
     res.status(201).json(message);
   } catch (error) {
     res.status(400).send(error);
   }
 });
-
 
 app.get('/api/messages', async (req, res) => {
   try {
